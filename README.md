@@ -90,8 +90,8 @@ requirements.txt
   `DEBUG=True` — **do not use these as-is in production**. Generate a fresh key
   and load it (plus production settings) from the environment before deploying.
 - This repo is a learning/demo project recorded for YouTube; see `code_plan.txt`
-  and `frontend_plan.txt` for the design notes and the API-readiness items
-  (pagination, auth, `/api/v1/` versioning) planned for future clients.
+  for the design notes and the API-readiness items (pagination, auth,
+  `/api/v1/` versioning) planned for future clients.
 
 ## License
 

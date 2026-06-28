@@ -58,3 +58,14 @@ Verification
 - `.venv/bin/python manage.py check`
 - `.venv/bin/python manage.py test`
 - manual: runserver + hit /api/expenses/
+
+API-readiness for future clients (web + planned Android app)
+------------------------------------------------------------
+Not blocking current work, but needed as the dataset/clients grow:
+- Pagination: list currently returns all rows; add DRF pagination
+  (web list and Android both consume it).
+- Auth: token/JWT auth before this is more than local-only.
+- Versioning: introduce /api/v1/ so shipped Android clients don't break
+  when the API evolves.
+(Android doesn't care about CORS, so serving the web UI from Django keeps
+things simple and CORS-free.)

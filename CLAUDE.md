@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Spec (from `Expense tracker.txt`)
+## Spec
 
 An expense tracker that:
 - Tracks expenses entered **day-wise**, taking two inputs per entry: a **reason** for the spend and an **amount**.
@@ -49,7 +49,7 @@ A single-page web UI served by Django at `GET /` (route in `expense_tracker/urls
 - **Stack:** vanilla HTML/CSS/JS — no build step, no framework. Served as Django static files on the **same origin** as the API, so no CORS config is needed.
 - **It is a thin client over the REST API.** `static/js/app.js` does `fetch()` calls to `/api/expenses/`; all validation/business rules stay in the API (the JS only mirrors errors the API returns). Do not move logic into the frontend.
 - **Features:** add expense, list (newest first), filter by day (`?date=`), client-side daily total, inline edit (`PATCH`), delete (with confirm). Unsafe requests send the `X-CSRFToken` header read from the cookie.
-- **Why so light:** the web UI is a secondary surface; a native Android app is the planned primary API client. See `frontend_plan.txt` for the full feature plan and the API-readiness items (pagination, auth, `/api/v1/` versioning) that future clients will need.
+- **Why so light:** the web UI is a secondary surface; a native Android app is the planned primary API client. See `code_plan.txt` for the API-readiness items (pagination, auth, `/api/v1/` versioning) that future clients will need.
 
 ## Environment & commands
 
