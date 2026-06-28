@@ -1,0 +1,60 @@
+Expense Tracker — Implementation Plan
+=====================================
+
+Decisions (locked in)
+----------------------
+- Interface: REST API using Django REST Framework (DRF).
+- Date granularity: DateField (day-only) — matches "day wise" spec.
+- Database: SQLite3 initially (swappable later).
+- Money: DecimalField (no float rounding), constrained positive.
+
+Step 1 — Dependencies
+---------------------
+- Add `djangorestframework` to requirements.txt.
+- Install into .venv: `.venv/bin/pip install -r requirements.txt`.
+- Add "rest_framework" to INSTALLED_APPS in expense_tracker/settings.py.
+
+Step 2 — DB schema (expenses/models.py)
+---------------------------------------
+Single model: Expense
+  - date        DateField(default=timezone.localdate, db_index=True)
+  - reason      CharField(max_length=255)
+  - amount      DecimalField(max_digits=10, decimal_places=2,
+                             validators=[MinValueValidator(Decimal("0.01"))])
+  - created_at  DateTimeField(auto_now_add=True)
+  - Meta.ordering = ["-date", "-created_at"]
+  - __str__ -> "<date> — <reason>: <amount>"
+Then: makemigrations + migrate.
+
+Step 3 — API layer
+------------------
+- expenses/serializers.py: ExpenseSerializer (ModelSerializer);
+  created_at read-only.
+- expenses/views.py: ExpenseViewSet(ModelViewSet);
+  get_queryset() applies ?date=YYYY-MM-DD filter when present.
+- expense_tracker/urls.py: DRF DefaultRouter registering
+  "expenses" -> ExpenseViewSet, mounted under /api/.
+
+Endpoints:
+  GET    /api/expenses/                 list (newest first); ?date= filters one day
+  POST   /api/expenses/                 create (reason, amount, optional date)
+  GET    /api/expenses/{id}/            retrieve
+  PUT/PATCH/DELETE /api/expenses/{id}/  update / delete (ModelViewSet default)
+
+Step 4 — Admin (expenses/admin.py)
+----------------------------------
+- Register Expense with list_display = (date, reason, amount),
+  list_filter = (date,), search_fields = (reason,).
+
+Step 5 — Tests (expenses/tests.py)
+----------------------------------
+- create expense via POST
+- list returns created expenses
+- ?date= filter returns only that day's expenses
+- negative / zero amount is rejected (400)
+
+Verification
+------------
+- `.venv/bin/python manage.py check`
+- `.venv/bin/python manage.py test`
+- manual: runserver + hit /api/expenses/

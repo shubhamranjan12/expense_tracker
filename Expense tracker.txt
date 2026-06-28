@@ -1,0 +1,5 @@
+Expense tracker
+
+- It should track the expenses, entered day wise, it should take 2 inputs, a reason for the spend and the amount.
+- We should be able to filter the expenses from a particular day.
+- The sqllite3 database can be used initially and can be scaled later.

@@ -1,0 +1,84 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Tracker</title>
+  <link rel="stylesheet" href="{% static 'css/style.css' %}" />
+</head>
+<body>
+  <main class="app">
+    <header class="app__header">
+      <h1>Expense Tracker</h1>
+      <div class="filter">
+        <label for="filter-date">Day</label>
+        <input type="date" id="filter-date" />
+        <button type="button" id="filter-clear" class="btn btn--ghost">All days</button>
+      </div>
+    </header>
+
+    <!-- Add expense -->
+    <section class="card" aria-labelledby="add-title">
+      <h2 id="add-title">Add expense</h2>
+      <form id="expense-form" class="form" novalidate>
+        <div class="form__row">
+          <label for="reason">Reason</label>
+          <input type="text" id="reason" name="reason" maxlength="255" required
+                 autocomplete="off" placeholder="e.g. Lunch" />
+          <small class="field-error" data-error-for="reason"></small>
+        </div>
+        <div class="form__row">
+          <label for="amount">Amount</label>
+          <input type="number" id="amount" name="amount" min="0.01" step="0.01"
+                 required placeholder="0.00" />
+          <small class="field-error" data-error-for="amount"></small>
+        </div>
+        <div class="form__row">
+          <label for="date">Date</label>
+          <input type="date" id="date" name="date" />
+          <small class="field-error" data-error-for="date"></small>
+        </div>
+        <div class="form__actions">
+          <button type="submit" class="btn btn--primary" id="submit-btn">Add</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Banner for non-field messages -->
+    <div id="banner" class="banner" role="alert" hidden></div>
+
+    <!-- Expense list -->
+    <section class="card" aria-labelledby="list-title">
+      <div class="list__head">
+        <h2 id="list-title">Expenses</h2>
+        <div class="total">
+          Total: <strong id="total">0.00</strong>
+        </div>
+      </div>
+
+      <div id="loading" class="muted" hidden>Loading…</div>
+      <div id="empty" class="muted" hidden>No expenses to show.</div>
+
+      <ul id="expense-list" class="expense-list"></ul>
+    </section>
+  </main>
+
+  <!-- Row template -->
+  <template id="row-template">
+    <li class="expense">
+      <div class="expense__main">
+        <span class="expense__reason"></span>
+        <span class="expense__date muted"></span>
+      </div>
+      <span class="expense__amount"></span>
+      <div class="expense__actions">
+        <button type="button" class="btn btn--ghost" data-action="edit">Edit</button>
+        <button type="button" class="btn btn--danger" data-action="delete">Delete</button>
+      </div>
+    </li>
+  </template>
+
+  <script src="{% static 'js/app.js' %}"></script>
+</body>
+</html>

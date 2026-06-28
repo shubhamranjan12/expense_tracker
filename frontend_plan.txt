@@ -1,0 +1,82 @@
+Expense Tracker — Frontend Feature Plan
+=======================================
+
+Stack & serving (decided)
+-------------------------
+- Vanilla HTML / CSS / JS (no build step, no framework).
+- Served by Django as static files on the same origin as the API
+  => no CORS needed; fetch() calls hit /api/expenses/ directly.
+- Rationale: the web UI is a secondary surface; the primary future client
+  is a native Android app. Keep the web client thin; all logic stays in the API.
+
+Serving approach
+----------------
+- Single page: templates/index.html rendered by one Django view (e.g. TemplateView
+  at "/"), or a static index.html under staticfiles. Static JS/CSS under static/.
+- JS talks to the existing REST API; no server-side rendering of expense data.
+
+Screens / layout (single page)
+------------------------------
+One page, three regions:
+1. Header: app title + the day filter control.
+2. "Add expense" form.
+3. Expense list for the selected day (or all), with per-day total.
+
+Core features
+-------------
+F1. Add an expense
+    - Form fields: reason (text, required), amount (number, required, > 0),
+      date (date picker, defaults to today).
+    - Submit -> POST /api/expenses/.
+    - On success: clear form, refresh the list, show a brief confirmation.
+    - On 400: show field-level errors returned by the API (mirror, don't
+      duplicate, server validation — e.g. non-positive amount).
+
+F2. List expenses
+    - GET /api/expenses/ (newest first, as the API already orders).
+    - Render each row: date, reason, amount, and edit/delete controls.
+    - Empty state when there are no expenses.
+
+F3. Filter by day
+    - Date picker in the header -> GET /api/expenses/?date=YYYY-MM-DD.
+    - "Clear filter" / "All days" toggle to drop the param.
+    - Reflect the active filter in the UI (and optionally the URL query string
+      so a filtered view is shareable/bookmarkable).
+
+F4. Daily total
+    - Show the sum of amounts for the currently displayed set
+      (computed client-side from the fetched rows; per the spec this is a
+      day-wise view, so the total is the spend for that day).
+
+F5. Edit an expense
+    - Inline edit or small modal -> PATCH /api/expenses/{id}/.
+    - Refresh row/list on success; surface validation errors as in F1.
+
+F6. Delete an expense
+    - Delete control -> DELETE /api/expenses/{id}/, with a confirm step.
+    - Remove from the list on success.
+
+Cross-cutting UX
+----------------
+- Loading state while requests are in flight (disable submit, show spinner).
+- Error handling for network/5xx (non-field banner, retry).
+- Amount formatting (2 decimals) and date display consistent with the API
+  (YYYY-MM-DD). Client validation is a convenience only; the API stays the
+  source of truth (positive amount, required fields).
+- Accessible, minimal styling; mobile-friendly layout.
+
+Explicitly out of scope (for now)
+---------------------------------
+- Auth/login (API is currently open; auth is a shared API concern, not web-only).
+- Categories, budgets, charts, multi-currency, date-range (multi-day) reports.
+- Pagination UI (add when the API adds pagination — see notes below).
+
+API-readiness notes (shared by web + future Android)
+----------------------------------------------------
+Not blocking this frontend, but these API gaps will surface as the web list
+grows and especially once the Android app exists:
+- Pagination: list currently returns all rows; large lists need
+  DRF pagination (web list and Android both consume it).
+- Auth: token/JWT auth before this is more than local-only.
+- Versioning: consider /api/v1/ so shipped Android clients don't break.
+(Tracked here so the frontend work doesn't silently assume these exist.)
