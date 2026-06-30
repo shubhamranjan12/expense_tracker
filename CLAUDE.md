@@ -21,7 +21,9 @@ A Django 5.2 project (Python 3.10) scaffolded at the repo root:
 - `requirements.txt` — pinned dependencies (`Django`, `djangorestframework`, `drf-spectacular`).
 - `.venv/` — the in-repo virtualenv to use for all commands.
 
-The core feature lives in the `expenses` app: an `Expense` model (`date` + `reason` + `amount`, with an indexed day-only `DateField` and a positive `DecimalField` for money), exposed as a DRF `ModelViewSet`.
+The core feature lives in the `expenses` app: an `Expense` model (`date` + `reason` + `amount`, with an indexed day-only `DateField` and a positive `DecimalField` for money), exposed as a DRF `ModelViewSet`. The model also has an `auto_now_add` `created_at` used as the secondary sort key.
+
+`date` defaults to `timezone.localdate` (today), so it is **optional on create** — POST without a `date` and the entry is filed under today. `id`/`created_at` are read-only in the serializer.
 
 ### Design notes / decided trade-offs
 - **`Expense` uses a plain auto-increment integer PK — keep it.** Making `date` the primary key was considered and rejected: a PK must be unique, so it would cap the table at one expense per day, which breaks the "multiple day-wise entries" spec. Per-date sequential ids (id nested under date) were also rejected — they require a per-day counter, adding write contention/race conditions for no benefit. Integer-PK lookups are O(log n) and do not degrade at scale, so `/api/expenses/{id}/` is the correct detail route.
@@ -60,7 +62,18 @@ Use the in-repo `.venv` for everything (activate with `source .venv/bin/activate
 - Run dev server: `.venv/bin/python manage.py runserver`
 - System check: `.venv/bin/python manage.py check`
 - Make / apply migrations: `.venv/bin/python manage.py makemigrations` then `.venv/bin/python manage.py migrate`
-- Run tests: `.venv/bin/python manage.py test` (single app/case: `.venv/bin/python manage.py test expenses.tests.SomeTestCase`)
+- Run tests: `.venv/bin/python manage.py test` (single case: `.venv/bin/python manage.py test expenses.tests.ExpenseAPITests`). Tests are DRF `APITestCase`s in `expenses/tests.py` that exercise the API end-to-end (create, today-default, list, day-filter, positive-amount validation).
 - Django shell: `.venv/bin/python manage.py shell`
 
 When adding dependencies, install into `.venv` and pin them in `requirements.txt` so the dependency set stays reproducible.
+
+## Deployment (Render)
+
+Deployed as a Render Blueprint from `render.yaml` (single `web` service):
+- **Build:** `./build.sh` — `pip install`, `collectstatic`, `migrate`.
+- **Start:** `gunicorn expense_tracker.wsgi:application`.
+- **Static files** are served by **WhiteNoise** (middleware right after `SecurityMiddleware`; `CompressedManifestStaticFilesStorage`), collected into `STATIC_ROOT = staticfiles/` (gitignored). Templates must reference assets via `{% static %}` so the hashed manifest names resolve.
+- **Settings are env-driven** (`expense_tracker/settings.py`): `SECRET_KEY`, `DEBUG` (defaults False), `ALLOWED_HOSTS` (comma-separated; Render's `RENDER_EXTERNAL_HOSTNAME` is appended automatically and added to `CSRF_TRUSTED_ORIGINS`). The hardcoded values remain only as local-dev fallbacks. With `DEBUG=False` the app forces HTTPS (`SECURE_SSL_REDIRECT`, secure cookies, HSTS, `SECURE_PROXY_SSL_HEADER` for Render's TLS-terminating proxy); these are skipped when `manage.py test` runs (the `TESTING` guard) since the test runner also sets `DEBUG=False`.
+- **Caveat — SQLite is ephemeral on Render:** the DB file lives on the instance's disk, so **data resets on every redeploy/restart**. This is an accepted trade-off for now; the swap to a persistent backend (Postgres via `dj-database-url`) is the future upgrade path noted in the spec.
+
+To simulate production locally: `DEBUG=False ALLOWED_HOSTS=127.0.0.1 SECRET_KEY=… .venv/bin/gunicorn expense_tracker.wsgi:application` (send `X-Forwarded-Proto: https` to bypass the SSL redirect over plain HTTP). Validate prod settings with `.venv/bin/python manage.py check --deploy`.

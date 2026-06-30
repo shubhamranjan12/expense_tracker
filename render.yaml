@@ -1,0 +1,17 @@
+# Render Blueprint for the Expense Tracker.
+# Connect this repo as a Blueprint in the Render dashboard and it provisions the
+# service below. SQLite is used as-is (ephemeral) — see build.sh / README.
+services:
+  - type: web
+    name: expense-tracker
+    runtime: python
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn expense_tracker.wsgi:application"
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: PYTHON_VERSION
+        value: "3.10.13"

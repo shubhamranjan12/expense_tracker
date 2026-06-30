@@ -84,11 +84,28 @@ requirements.txt
 .venv/bin/python manage.py test
 ```
 
+## Deploy on Render
+
+This repo ships a [Render](https://render.com) Blueprint (`render.yaml`). Push to
+GitHub, then in Render: **New → Blueprint** and point it at the repo. Render runs
+`./build.sh` (install, `collectstatic`, `migrate`) and starts the app with
+Gunicorn. `SECRET_KEY` is auto-generated and `DEBUG` is `False`; `ALLOWED_HOSTS`
+and CSRF are configured automatically from Render's hostname. Static files are
+served by [WhiteNoise](https://whitenoise.readthedocs.io/).
+
+> **Heads up:** the deploy uses **SQLite on Render's ephemeral disk**, so
+> **expenses reset on every redeploy/restart**. Fine for a demo; swap in a
+> managed Postgres (e.g. `dj-database-url`) when you need persistence.
+
+Settings are environment-driven (`SECRET_KEY`, `DEBUG`, `ALLOWED_HOSTS`), so the
+same code runs locally and in production. Run `python manage.py check --deploy`
+to validate production settings.
+
 ## Notes
 
-- `SECRET_KEY` in `expense_tracker/settings.py` is a development placeholder and
-  `DEBUG=True` — **do not use these as-is in production**. Generate a fresh key
-  and load it (plus production settings) from the environment before deploying.
+- The `SECRET_KEY` and `DEBUG=True` baked into `expense_tracker/settings.py` are
+  **local-dev fallbacks only** — set `SECRET_KEY` and `DEBUG=False` via the
+  environment in production (the Render Blueprint does this for you).
 - This repo is a learning/demo project recorded for YouTube; see `code_plan.txt`
   for the design notes and the API-readiness items (pagination, auth,
   `/api/v1/` versioning) planned for future clients.
